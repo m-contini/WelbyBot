@@ -3,6 +3,7 @@
 import asyncio
 from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
+from telegram.error import NetworkError
 
 from apscheduler.schedulers.background import BackgroundScheduler # type: ignore
 
@@ -26,7 +27,7 @@ def ita_string(dt: datetime) -> str:
     return dt.strftime("%d/%m/%Y %H:%M:%S")
 
 # /start
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def slash_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message:
         await update.message.reply_text("Il mio nome: Welby\nIl mio scopo: rubarti la Bocca.")
 
@@ -37,7 +38,7 @@ async def scheduled_message(context: ContextTypes.DEFAULT_TYPE, text: str, dt: d
     await context.bot.send_message(chat_id=GROUP_ID, text=msg)
 
 # /schedule
-async def schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def slash_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
         if not context.args or len(context.args) < 3:
@@ -78,9 +79,12 @@ async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply.append("Ah come dici? Ti piacciono i ppall mmocc?!")
         if "sindaco" in text:
             reply.append("Oh sì Sindaco ingoia tutto Sindaco.")
+        if "frocio" in text:
+            reply.append("Come combatto un frocio? Scopandolo io prima che lui scopi me.\nSe io non scopo lui, infatti, lui scoperà me.")
+
         if reply:
             if len(reply) == 1:
-                await update.message.reply_text(reply[0]) 
+                await update.message.reply_text(reply[0])
             await update.message.reply_text(f'Ho {len(reply)} osservazioni da fare:\n' + '\n'.join(f'{i}. {txt}' for i, txt in enumerate(reply, start=1)))
 
 async def send_startup_message(bot: Bot):
@@ -89,7 +93,17 @@ async def send_startup_message(bot: Bot):
 async def send_shutdown_message(bot: Bot):
     await bot.send_message(chat_id=GROUP_ID, text="😴 WelbyBot si sta spegnendo... uah che scopata!")
 
+async def error_handler(update, context):
+    try:
+        raise context.error
+    except NetworkError as e:
+        print(f"[WARN] Network error: {e}, retrying...")
+        await asyncio.sleep(5)
+    except Exception as e:
+        print(f"[ERROR] Unhandled exception: {type(e).__name__}: {e}")
+
 # Avvio bot
+# async def main():
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
     # per mandare messaggi al di fuori da asyncio
@@ -99,11 +113,15 @@ def main():
     scheduler.start()
 
     # Comandi
-    app.add_handler(CommandHandler("start", start))
-    app.add_handler(CommandHandler("schedule", schedule))
+    app.add_handler(CommandHandler("start", slash_start))
+    app.add_handler(CommandHandler("schedule", slash_schedule))
+
 
     # Trigger
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, trigger_reply))
+
+    # Error Handling
+    app.add_error_handler(error_handler)
 
     # Funzioni di startup/shutdown automatiche
     async def on_startup(app):
@@ -120,8 +138,17 @@ def main():
     app.post_init = on_startup
     app.post_shutdown = on_shutdown
 
-    print("\n\t✅ WelbyBot attivo! Premi Ctrl+C per uscire.")
-    app.run_polling()
+    print("\n\t✅ WelbyBot attivo!" + "Premi Ctrl+C per uscire.\n".upper())
+
+    try:
+        app.run_polling()
+    except KeyboardInterrupt:
+        print("[EXIT] Interruzione manuale (Ctrl+C).")
+    except Exception as e:
+        print(f"[CRITICAL] {type(e).__name__}: {e}")
+    finally:
+        scheduler.shutdown(wait=False)
+        print("[EXIT] WelbyBot terminato correttamente.")
 
 
 if __name__ == "__main__":

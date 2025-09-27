@@ -70,5 +70,5 @@ Fac: (Spiega a cosa servirebbe nel gruppo)
 
 ---
 
-**Versione bot:** v1.0  
+**Versione bot:** v1.1  
 **Data apertura:** _(compilata automaticamente da GitHub)_
