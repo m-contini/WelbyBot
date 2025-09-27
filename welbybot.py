@@ -79,6 +79,8 @@ async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if "sindaco" in text:
             reply.append("Oh sì Sindaco ingoia tutto Sindaco.")
         if reply:
+            if len(reply) == 1:
+                await update.message.reply_text(reply[0]) 
             await update.message.reply_text(f'Ho {len(reply)} osservazioni da fare:\n' + '\n'.join(f'{i}. {txt}' for i, txt in enumerate(reply, start=1)))
 
 async def send_startup_message(bot: Bot):
