@@ -14,6 +14,8 @@ import os
 load_dotenv(os.path.join(os.getcwd(), '.env'))
 TOKEN = os.getenv('TOKEN', '')
 GROUP_ID = int(os.getenv('GROUP_ID', ''))
+GITHUB_PAGE = 'https://github.com/m-contini/WelbyBot'
+VERSION = 'v1.0 2025-09-27'
 
 scheduler = BackgroundScheduler()
 
@@ -80,7 +82,7 @@ async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(f'Ho {len(reply)} osservazioni da fare:\n' + '\n'.join(f'{i}. {txt}' for i, txt in enumerate(reply, start=1)))
 
 async def send_startup_message(bot: Bot):
-    await bot.send_message(chat_id=GROUP_ID, text=f"🤖 WelbyBot - Online. Me ne frego!\n(Ultima scopata: {ita_string(datetime.now())})")
+    await bot.send_message(chat_id=GROUP_ID, text=f"🤖 WelbyBot - Online. Me ne frego!\n(Ultima scopata: {ita_string(datetime.now())})\nIncontrami: {GITHUB_PAGE}\n{VERSION}")
 
 async def send_shutdown_message(bot: Bot):
     await bot.send_message(chat_id=GROUP_ID, text="😴 WelbyBot si sta spegnendo... uah che scopata!")
