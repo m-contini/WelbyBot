@@ -2,6 +2,7 @@
 
 import asyncio
 from telegram import Update, Bot
+from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.error import NetworkError
 
@@ -12,21 +13,42 @@ import re
 
 from dotenv import load_dotenv
 import os
+import sys
+
+
+#: Messaggio manuale da shell Bash
+#: curl -X POST "https://api.telegram.org/bot<TOKEN>/sendMessage" -d "chat_id=<GROUP_ID>&text=CIMMIA 🦧"
+
 
 load_dotenv(os.path.join(os.getcwd(), '.env'))
 TOKEN = os.getenv('TOKEN', '')  
 GROUP_ID = int(os.getenv('GROUP_ID', ''))
 
-GITHUB_PAGE = '[https://github.com/m-contini/WelbyBot](WelbyBot)'
-with open(os.path.join(os.getcwd(), 'README.md'), 'r', encoding='utf-8', errors='ignore') as README:
-    match = re.search(r"Versione:.+?(\d*\.\d*).+?Data rilascio:.+?(\d+-\d+-\d+)", README.read(), re.DOTALL)
-    if match:
-        VERSION, RELEASED  = match.groups()
-
 scheduler = BackgroundScheduler()
 
-#: Messaggio manuale da shell Bash
-#: curl -X POST "https://api.telegram.org/bot<TOKEN>/sendMessage" -d "chat_id=<GROUP_ID>&text=CIMMIA 🦧"
+async def send_startup_message(bot: Bot):
+    GITHUB_PAGE = '[WelbyBot](https://github.com/m-contini/WelbyBot)'
+
+    # Legge versione e data release da README
+    with open(os.path.join(os.getcwd(), 'README.md'), 'r', encoding='utf-8', errors='ignore') as README:
+        match = re.search(r"Versione:.+?(\d*\.\d*).+?Data rilascio:.+?(\d+-\d+-\d+)", README.read(), re.DOTALL)
+        if match:
+            VERSION, RELEASED  = match.groups()
+
+    text = (
+        "🤖 *WelbyBot* - *Online*. *Me ne frego!*",
+        f"(Ultima _scopata_: {ita_string(datetime.now())})",
+        f"Incontrami: {GITHUB_PAGE}",
+        f"v{VERSION} ({RELEASED})"
+    )
+    await bot.send_message(chat_id=GROUP_ID, text='\n'.join(text), parse_mode=ParseMode.MARKDOWN)
+
+async def send_shutdown_message(bot: Bot):
+    text = (
+        "🤖 *WelbyBot* - *Offline*."
+        "Alla prossima (ah che) _scopata_!"
+    )
+    await bot.send_message(chat_id=GROUP_ID, text=text, parse_mode=ParseMode.MARKDOWN)
 
 def ita_string(dt: datetime) -> str:
     return dt.strftime("%d/%m/%Y %H:%M:%S")
@@ -85,18 +107,12 @@ async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if "sindaco" in text:
             reply.append("Oh sì Sindaco ingoia tutto Sindaco.")
         if "frocio" in text:
-            reply.append("Come combatto un frocio? Scopandolo io prima che lui scopi me.\nSe io non scopo lui, infatti, lui scoperà me.")
+            reply.append("Come combatto un frocio?\nScopandolo io prima che lui scopi me.\nSe io non scopo lui, infatti, lui scoperà me.")
 
         if len(reply) == 1:
             await update.message.reply_text(reply[0])
         elif len(reply) > 1:
-            await update.message.reply_text(f'Ho {len(reply)} osservazioni da fare:\n' + '\n'.join(f'{i}. {txt}' for i, txt in enumerate(reply, start=1)))
-
-async def send_startup_message(bot: Bot):
-    await bot.send_message(chat_id=GROUP_ID, text=f"🤖 WelbyBot - Online. Me ne frego!\n(Ultima scopata: {ita_string(datetime.now())})\nIncontrami: {GITHUB_PAGE}\nv{VERSION}")
-
-async def send_shutdown_message(bot: Bot):
-    await bot.send_message(chat_id=GROUP_ID, text="😴 WelbyBot si sta spegnendo... uah che scopata!")
+            await update.message.reply_text(f'Ho {len(reply)} osservazioni da fare:\n' + '\n'.join(f'{i}. {txt.replace('\n', ' ')}' for i, txt in enumerate(reply, start=1)))
 
 async def error_handler(update, context):
     try:
@@ -152,7 +168,6 @@ def main():
     except Exception as e:
         print(f"[CRITICAL] {type(e).__name__}: {e}")
     finally:
-        scheduler.shutdown(wait=False)
         print("[EXIT] WelbyBot terminato correttamente.")
 
 
