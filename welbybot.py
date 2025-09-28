@@ -8,15 +8,20 @@ from telegram.error import NetworkError
 from apscheduler.schedulers.background import BackgroundScheduler # type: ignore
 
 from datetime import datetime, timedelta
+import re
 
 from dotenv import load_dotenv
 import os
 
 load_dotenv(os.path.join(os.getcwd(), '.env'))
-TOKEN = os.getenv('TOKEN', '')
+TOKEN = os.getenv('TOKEN', '')  
 GROUP_ID = int(os.getenv('GROUP_ID', ''))
-GITHUB_PAGE = 'https://github.com/m-contini/WelbyBot'
-VERSION = 'v1.0 2025-09-27'
+
+GITHUB_PAGE = '[https://github.com/m-contini/WelbyBot](WelbyBot)'
+with open(os.path.join(os.getcwd(), 'README.md'), 'r', encoding='utf-8', errors='ignore') as README:
+    match = re.search(r"Versione:.+?(\d*\.\d*).+?Data rilascio:.+?(\d+-\d+-\d+)", README.read(), re.DOTALL)
+    if match:
+        VERSION, RELEASED  = match.groups()
 
 scheduler = BackgroundScheduler()
 
@@ -82,13 +87,13 @@ async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if "frocio" in text:
             reply.append("Come combatto un frocio? Scopandolo io prima che lui scopi me.\nSe io non scopo lui, infatti, lui scoperà me.")
 
-        if reply:
-            if len(reply) == 1:
-                await update.message.reply_text(reply[0])
+        if len(reply) == 1:
+            await update.message.reply_text(reply[0])
+        elif len(reply) > 1:
             await update.message.reply_text(f'Ho {len(reply)} osservazioni da fare:\n' + '\n'.join(f'{i}. {txt}' for i, txt in enumerate(reply, start=1)))
 
 async def send_startup_message(bot: Bot):
-    await bot.send_message(chat_id=GROUP_ID, text=f"🤖 WelbyBot - Online. Me ne frego!\n(Ultima scopata: {ita_string(datetime.now())})\nIncontrami: {GITHUB_PAGE}\n{VERSION}")
+    await bot.send_message(chat_id=GROUP_ID, text=f"🤖 WelbyBot - Online. Me ne frego!\n(Ultima scopata: {ita_string(datetime.now())})\nIncontrami: {GITHUB_PAGE}\nv{VERSION}")
 
 async def send_shutdown_message(bot: Bot):
     await bot.send_message(chat_id=GROUP_ID, text="😴 WelbyBot si sta spegnendo... uah che scopata!")
