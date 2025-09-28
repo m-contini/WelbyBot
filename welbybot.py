@@ -55,6 +55,24 @@ async def send_shutdown_message(bot: Bot):
 def ita_string(dt: datetime) -> str:
     return dt.strftime("%d/%m/%Y %H:%M:%S")
 
+# /gabbia <minuti>
+async def slash_gabbia(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        if not context.args or len(context.args) != 1:
+            raise KeyError
+        minutes = float(context.args[0])
+        if minutes <= 0:
+            raise ValueError
+        until = datetime.now() + timedelta(minutes=minutes)
+        await update.message.reply_text(f"Ok, vado in gabbia fino a: {ita_string(until)}.\nSi spera si scopi. Esperémos que escopamos; nucha chupar el chorrizo.") # type: ignore
+        await asyncio.sleep(minutes * 60)
+        await update.message.reply_text("Sono uscito dalla gabbia, che scopata che mi son fatto!") # type: ignore
+    except (KeyError, ValueError) as e:
+        await update.message.reply_text( # type: ignore
+            f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
+            "/gabbia <minuti>"
+        )
+
 # /start
 async def slash_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message:
@@ -95,17 +113,13 @@ async def slash_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Sugi pula nel frattempo ☀️.") # type: ignore
 
     except (KeyError, ValueError) as e:
-        await update.message.reply_text(f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n" # type: ignore
-                                        "/schedule <unità s|m|h|d> <valore> <messaggio>"
-                                    )
+        await update.message.reply_text( # type: ignore
+            f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
+            "/schedule <unità s|m|h|d> <valore> <messaggio>"
+        )
 
 # /todo "add", "Feature", "da", "implementare"
 async def slash_todo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    # def escape_markdown(text: str) -> str:
-    #     escape_chars = r'_*[]()~`>#+-=|{}.!'
-    #     for ch in escape_chars:
-    #         text = text.replace(ch, f'\\{ch}')
-    #     return text
 
     def escape_markdown_v2(text: str) -> str:
         # Escapa tutti i caratteri speciali Markdown V2
@@ -153,6 +167,8 @@ async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply.append("Ah come dici? Ti piacciono i ppall mmocc?!")
         if "sindaco" in text:
             reply.append("Oh sì Sindaco ingoia tutto Sindaco.")
+        if "chorizo" in text:
+            reply.append("Oh sì chorizo. Siempre chuparando el chorizo finocchio del cazzo.")
         if "frocio" in text:
             reply.append("Come combatto un frocio?\nScopandolo io prima che lui scopi me.\nSe io non scopo lui, infatti, lui scoperà me.")
 
@@ -183,6 +199,7 @@ def main():
     app.add_handler(CommandHandler("start", slash_start))
     app.add_handler(CommandHandler("schedule", slash_schedule))
     app.add_handler(CommandHandler("todo", slash_todo))
+    app.add_handler(CommandHandler("gabbia", slash_gabbia))
 
     # Trigger
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, trigger_reply))

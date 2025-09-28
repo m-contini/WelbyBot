@@ -8,6 +8,7 @@
     - [`/todo`](#todo)
       - [Visualizzare](#visualizzare)
       - [Aggiungere](#aggiungere)
+    - [`/gabbia`](#gabbia)
   - [2. Trigger](#2-trigger)
   - [3. Messaggi automatici](#3-messaggi-automatici)
   - [4. Errori o Richieste](#4-errori-o-richieste)
@@ -111,6 +112,29 @@ Permette di aggiungere una nuova voce alla To-Do list.
 ```
 
 **Nota:** il comando aggiorna direttamente il file `ToDo.md`. Le modifiche diventano parte integrante della lista alla prossima chiamata di `/todo`.
+
+---
+
+### `/gabbia`
+
+Silenzia il bot per un periodo specificato (minuti).
+
+**Sintassi:**
+
+```plain
+/gabbia <minuti>
+```
+
+| Parametro  | Tipo   | Descrizione                     |
+| ---------- | ------ | ------------------------------- |
+| `<minuti>` | numero | Durata del silenziamento (intero o decimale) |
+
+**Esempi:**
+
+```plain
+/gabbia 5
+/gabbia 0.5
+```
 
 ---
 
