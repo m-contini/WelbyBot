@@ -167,6 +167,8 @@ async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
             reply.append("Ah come dici? Ti piacciono i ppall mmocc?!")
         if "sindaco" in text:
             reply.append("Oh sì Sindaco ingoia tutto Sindaco.")
+        if "uccell" in text:
+            reply.append("Uccellino di merda se ti becco ti ammazzo.")
         if "chorizo" in text:
             reply.append("Oh sì chorizo. Siempre chuparando el chorizo finocchio del cazzo.")
         if "frocio" in text:
