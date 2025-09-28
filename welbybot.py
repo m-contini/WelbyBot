@@ -26,6 +26,8 @@ GROUP_ID = int(os.getenv('GROUP_ID', ''))
 
 scheduler = BackgroundScheduler()
 
+SILENT = 'silent' in sys.argv
+
 async def send_startup_message(bot: Bot):
     GITHUB_PAGE = '[WelbyBot](https://github.com/m-contini/WelbyBot)'
 
@@ -33,7 +35,7 @@ async def send_startup_message(bot: Bot):
     with open(os.path.join(os.getcwd(), 'README.md'), 'r', encoding='utf-8', errors='ignore') as README:
         match = re.search(r"Versione:.+?(\d*\.\d*).+?Data rilascio:.+?(\d+-\d+-\d+)", README.read(), re.DOTALL)
         if match:
-            VERSION, RELEASED  = match.groups()
+            VERSION, RELEASED = match.groups()
 
     text = (
         "🤖 *WelbyBot* - *Online*. *Me ne frego!*",
@@ -45,10 +47,10 @@ async def send_startup_message(bot: Bot):
 
 async def send_shutdown_message(bot: Bot):
     text = (
-        "🤖 *WelbyBot* - *Offline*."
+        "🤖 *WelbyBot* - *Offline*.",
         "Alla prossima (ah che) _scopata_!"
     )
-    await bot.send_message(chat_id=GROUP_ID, text=text, parse_mode=ParseMode.MARKDOWN)
+    await bot.send_message(chat_id=GROUP_ID, text='\n'.join(text), parse_mode=ParseMode.MARKDOWN)
 
 def ita_string(dt: datetime) -> str:
     return dt.strftime("%d/%m/%Y %H:%M:%S")
@@ -64,7 +66,7 @@ async def scheduled_message(context: ContextTypes.DEFAULT_TYPE, text: str, dt: d
     msg = text + f'\n(Questo messaggio fu programmato in data {date} alle ore {time})'
     await context.bot.send_message(chat_id=GROUP_ID, text=msg)
 
-# /schedule
+# /schedule m 10 Questo messaggio arriva tra 10 minuti
 async def slash_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
@@ -93,7 +95,52 @@ async def slash_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text(f"Sugi pula nel frattempo ☀️.") # type: ignore
 
     except (KeyError, ValueError) as e:
-        await update.message.reply_text(f"CRY! - {type(e).__name__}: {e}\nUso corretto: /schedule <unità s|m|h|d> <valore> <messaggio>") # type: ignore
+        await update.message.reply_text(f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n" # type: ignore
+                                        "/schedule <unità s|m|h|d> <valore> <messaggio>"
+                                    )
+
+# /todo "add", "Feature", "da", "implementare"
+async def slash_todo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # def escape_markdown(text: str) -> str:
+    #     escape_chars = r'_*[]()~`>#+-=|{}.!'
+    #     for ch in escape_chars:
+    #         text = text.replace(ch, f'\\{ch}')
+    #     return text
+
+    def escape_markdown_v2(text: str) -> str:
+        # Escapa tutti i caratteri speciali Markdown V2
+        return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
+
+
+    if context.args:
+        try:
+            if context.args[0] != 'add' or len(context.args) <= 1:
+                raise KeyError
+            with open(os.path.join(os.getcwd(), 'ToDo.md'), 'a', encoding='utf-8', errors='ignore') as TODO:
+                TODO.write('- ' + ' '.join(context.args[1:]) + ';  \n')
+            await update.message.reply_text("✅ Nuova voce aggiunta!")  # type: ignore
+            return
+        except KeyError as e:
+            await update.message.reply_text( # type: ignore
+                f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
+                "/todo: Elenca le features da implementare;\n"
+                "/todo add Implementa un contatore autistico: Aggiunge riga alla To-Do list)"
+            )
+    else:
+        i = 0
+        todos = []
+        with open(os.path.join(os.getcwd(), 'ToDo.md'), 'r', encoding='utf-8', errors='ignore') as TODO:
+            for line in TODO:
+                match = re.search(r"- (.+)$", line)
+                if not match:
+                    continue
+                i += 1
+                line = rf'{i}. {match.group(1).strip()}'
+                todos.append(escape_markdown_v2(line))
+        if todos:
+            await update.message.reply_text(text='\n'.join(todos), parse_mode=ParseMode.MARKDOWN_V2) # type: ignore
+        else:
+            await update.message.reply_text("Nessuna voce trovata") # type: ignore
 
 # Trigger
 async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -124,7 +171,6 @@ async def error_handler(update, context):
         print(f"[ERROR] Unhandled exception: {type(e).__name__}: {e}")
 
 # Avvio bot
-# async def main():
 def main():
     app = ApplicationBuilder().token(TOKEN).build()
     # per mandare messaggi al di fuori da asyncio
@@ -136,7 +182,7 @@ def main():
     # Comandi
     app.add_handler(CommandHandler("start", slash_start))
     app.add_handler(CommandHandler("schedule", slash_schedule))
-
+    app.add_handler(CommandHandler("todo", slash_todo))
 
     # Trigger
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, trigger_reply))
@@ -155,11 +201,14 @@ def main():
         scheduler.shutdown(wait=False)
         print("\n✅ Scheduler chiuso correttamente")
 
-    # Registra i callback
-    app.post_init = on_startup
-    app.post_shutdown = on_shutdown
-
     print("\n\t✅ WelbyBot attivo!" + "Premi Ctrl+C per uscire.\n".upper())
+
+    # Registra i callback
+    if not SILENT:
+        app.post_init = on_startup
+        app.post_shutdown = on_shutdown
+    else:
+        print("\t\t-- Modalità Silenziosa --".upper(), "\t\t-- ANoDoRea non si presenterà al suo ingresso in chat -- \n", sep='\n')
 
     try:
         app.run_polling()

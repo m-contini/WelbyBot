@@ -5,6 +5,9 @@
   - [1. Comandi disponibili](#1-comandi-disponibili)
     - [`/start`](#start)
     - [`/schedule`](#schedule)
+    - [`/todo`](#todo)
+      - [Visualizzare](#visualizzare)
+      - [Aggiungere](#aggiungere)
   - [2. Trigger](#2-trigger)
   - [3. Messaggi automatici](#3-messaggi-automatici)
   - [4. Errori o Richieste](#4-errori-o-richieste)
@@ -59,6 +62,55 @@ Programma l’invio di un messaggio nel gruppo dopo un intervallo specificato.
 ```
 
 Il messaggio pianificato includerà la data e l’ora in cui è stato schedulato.
+
+---
+
+### `/todo`
+
+Mostra o aggiorna la lista interna delle funzionalità pianificate (To-Do list) del bot.
+
+La lista è memorizzata nel file `ToDo.md` nel repository.
+
+#### Visualizzare
+
+Mostra tutte le voci attualmente presenti nella To-Do list.
+
+**Sintassi:**
+
+```plain
+/todo
+```
+
+**Esempio di risposta:**
+
+```plain
+1. /gabbia <minuti>: silenzia AnoDoRea per alcuni minuti
+2. /Bossetti: incrementa un contatore Autism+1 e basta
+3. Nazionalità: risposte automatiche a menzioni di nazioni
+```
+
+#### Aggiungere
+
+Permette di aggiungere una nuova voce alla To-Do list.
+
+**Sintassi:**
+
+```plain
+/todo add <testo>
+```
+
+| Parametro | Tipo  | Descrizione                              |
+| --------- | ----- | ---------------------------------------- |
+| `<testo>` | testo | Contenuto della nuova voce da aggiungere |
+
+**Esempi:**
+
+```plain
+/todo add U-word (Uccellaccio bastardo)
+/todo add Query per parole chiave in-chat
+```
+
+**Nota:** il comando aggiorna direttamente il file `ToDo.md`. Le modifiche diventano parte integrante della lista alla prossima chiamata di `/todo`.
 
 ---
 
@@ -131,7 +183,7 @@ Contattare il Potere dell'Autismo Centrale.
 
 ## 7. Versione
 
-**Versione:** 1.1  
+**Versione:** 1.2  
 **Data rilascio:** 2025-09-28
 
 ---
