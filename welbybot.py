@@ -205,7 +205,7 @@ async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if "uccell" in text:
             reply.append("Uccellino di merda se ti becco ti ammazzo.")
         if "chorizo" in text:
-            reply.append("Oh sì chorizo. Siempre chuparando el chorizo finocchio del cazzo.")
+            reply.append("Oh sì chorizo. Siempre chupando el chorizo, finocchio del cazzo.")
         if "frocio" in text:
             reply.append("Come combatto un frocio?\nScopandolo io prima che lui scopi me.\nSe io non scopo lui, infatti, lui scoperà me.")
 
