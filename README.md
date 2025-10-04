@@ -21,7 +21,7 @@
 
 ## WelbyBot  
 
-**WelbyBot** è un bot Telegram, di nome *ANoDoRea*, installato e gestito dall'**Autismo Centrale**.  
+**WelbyBot** è un bot Telegram, concretizzato in *ANoDoRea*, installato e gestito dall'**Autismo Centrale**.  
 
 Questo documento fornisce le istruzioni per utilizzare i comandi disponibili e interagire con il bot.  
 Qualsiasi richiesta di modifica o segnalazione di errore va inviata tramite **GitHub** (vedi sezione finale).
@@ -62,7 +62,7 @@ Il messaggio pianificato includerà la data e l’ora in cui è stato schedulato
 
 Mostra o aggiorna la lista interna delle funzionalità pianificate (To-Do list) del bot.
 
-La lista è memorizzata nel file `ToDo.md` nel repository.
+La lista è memorizzata nel file `ToDo.md`, **non** presente nel repository.
 
 #### Visualizzare
 

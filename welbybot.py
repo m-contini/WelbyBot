@@ -220,15 +220,15 @@ async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(f'Ho {len(reply)} osservazioni da fare:\n' + '\n'.join(f'{i}. {txt.replace('\n', ' ')}' for i, txt in enumerate(reply, start=1)))
 
 async def error_handler(update, context):
-    try:
+    if context.error:
         when = ita_string(datetime.now())
-        if context.error:
+        try:
             raise context.error
-    except NetworkError as e:
-        print(f"[WARN] {when} Network error: {e}, retrying...")
-        await asyncio.sleep(5)
-    except Exception as e:
-        print(f"[ERROR] {when} Unhandled exception: {type(e).__name__}: {e}")
+        except NetworkError as e:
+            print(f"[WARN] | {when} | Network error: {e}, retrying...")
+            await asyncio.sleep(5)
+        except Exception as e:
+            print(f"[ERROR] | {when} | Unhandled exception: {type(e).__name__}: {e}")
 
 # Avvio bot
 def main():
@@ -275,13 +275,11 @@ def main():
     try:
         app.run_polling()
     except KeyboardInterrupt:
-        when = ita_string(datetime.now())
-        print(f"[EXIT] {when} Interruzione manuale (Ctrl+C).")
+        print(f"\n[EXIT] | {ita_string(datetime.now())} | Interruzione manuale (Ctrl+C).")
     except Exception as e:
-        when = ita_string(datetime.now())
-        print(f"[CRITICAL] {when} {type(e).__name__}: {e}")
+        print(f"\n[CRITICAL] | {ita_string(datetime.now())} | {type(e).__name__}: {e}")
     finally:
-        print("[EXIT] WelbyBot terminato correttamente.")
+        print(f"\n[EXIT] | {ita_string(datetime.now())} | WelbyBot terminato correttamente.")
 
 
 if __name__ == "__main__":

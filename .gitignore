@@ -1,4 +1,4 @@
 .env
 *.ipynb
-ToDo.md
-history
+private
+__pycache__
