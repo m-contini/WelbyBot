@@ -75,16 +75,15 @@ async def slash_gabbia(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "/gabbia <minuti>"
         )
 
-# /bossetti
+# /bossetti <show>
 async def slash_bossetti(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     path = os.path.join(os.getcwd(), BOSSETTI)
     args: list[str] = context.args # type: ignore
     mode = 'r' if (args is not None and len(args) > 0) else 'a'
     try:
-        if mode == 'r':
-            if args[0].lower() != 'show':
-                raise KeyError(args[0])
+        if mode == 'r' and args[0].lower() != 'show':
+            raise KeyError(args[0])
 
         now = datetime.now().replace(microsecond=0)
         with open(path, 'r', encoding='utf-8') as f:
@@ -118,11 +117,6 @@ async def slash_bossetti(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "/bossetti: aumenta silentemente il contatore;\n"
             "/bossetti show: mostra il valore attuale del contatore."
         )
-
-# /start
-async def slash_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.message:
-        await update.message.reply_text("Il mio nome: Welby\nIl mio scopo: rubarti la Bocca.")
 
 # Invio messaggio programmato, con data e ora di schedulazione
 async def scheduled_message(context: ContextTypes.DEFAULT_TYPE, text: str, dt: datetime):
@@ -246,7 +240,7 @@ def main():
     scheduler.start()
 
     # Comandi
-    app.add_handler(CommandHandler("start", slash_start))
+    # app.add_handler(CommandHandler("start", slash_start))
     app.add_handler(CommandHandler("schedule", slash_schedule))
     app.add_handler(CommandHandler("todo", slash_todo))
     app.add_handler(CommandHandler("gabbia", slash_gabbia))

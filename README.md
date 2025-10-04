@@ -3,7 +3,6 @@
 - [**Table of Contents**](#table-of-contents)
   - [WelbyBot](#welbybot)
   - [1. Comandi disponibili](#1-comandi-disponibili)
-    - [`/start`](#start)
     - [`/schedule`](#schedule)
     - [`/todo`](#todo)
       - [Visualizzare](#visualizzare)
@@ -30,16 +29,6 @@ Qualsiasi richiesta di modifica o segnalazione di errore va inviata tramite **Gi
 ---
 
 ## 1. Comandi disponibili
-
-### `/start`
-
-Mostra un messaggio di presentazione del bot.  
-
-**Sintassi:**
-
-```plain
-/start
-```
 
 ### `/schedule`
 
