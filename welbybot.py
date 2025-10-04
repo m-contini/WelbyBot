@@ -10,6 +10,7 @@ from apscheduler.schedulers.background import BackgroundScheduler # type: ignore
 
 from datetime import datetime, timedelta
 import re
+import csv
 
 from dotenv import load_dotenv
 import os
@@ -23,6 +24,8 @@ import sys
 load_dotenv(os.path.join(os.getcwd(), '.env'))
 TOKEN = os.getenv('TOKEN', '')  
 GROUP_ID = int(os.getenv('GROUP_ID', ''))
+BOSSETTI = os.getenv('BOSSETTI', '')
+TO_DO = os.getenv('TO_DO', '')
 
 scheduler = BackgroundScheduler()
 
@@ -52,8 +55,7 @@ async def send_shutdown_message(bot: Bot):
     )
     await bot.send_message(chat_id=GROUP_ID, text='\n'.join(text), parse_mode=ParseMode.MARKDOWN)
 
-def ita_string(dt: datetime) -> str:
-    return dt.strftime("%d/%m/%Y %H:%M:%S")
+def ita_string(dt: datetime) -> str:    return dt.strftime("%d/%m/%Y %H:%M:%S")
 
 # /gabbia <minuti>
 async def slash_gabbia(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -75,39 +77,47 @@ async def slash_gabbia(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # /bossetti
 async def slash_bossetti(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if context.args:
-        try:
-            if context.args[0].lower() != 'show':
-                raise KeyError
-            with open('autism_log.csv', 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-            datestr, counterstr = lines[-1].strip().split(';')
-            date: str = ita_string(datetime.strptime(datestr, '%Y-%m-%d %H:%M:%S.%f'))
-            counterstr = f'{counterstr:,}'.replace(',', '.')
-            await update.message.reply_text(f"Autism attuale: {counterstr}, incrementato il {date}") # type: ignore
-        except FileNotFoundError:
-            await update.message.reply_text("Autism attuale: 0") # type: ignore
-        except KeyError as e:
-            await update.message.reply_text( # type: ignore
-                f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
-                "/bossetti: aumenta silentemente il contatore;\n"
-                "/bossetti show: mostra il valore attuale del contatore."
-            )
-    else:
-        try:
-            with open('autism_log.csv', 'r', encoding='utf-8') as f:
-                lines = f.readlines()
-        except FileNotFoundError:
-            with open('autism_log.csv', 'w', encoding='utf-8') as f:
+
+    path = os.path.join(os.getcwd(), BOSSETTI)
+    args: list[str] = context.args # type: ignore
+    mode = 'r' if (args is not None and len(args) > 0) else 'a'
+    try:
+        if mode == 'r':
+            if args[0].lower() != 'show':
+                raise KeyError(args[0])
+
+        now = datetime.now().replace(microsecond=0)
+        with open(path, 'r', encoding='utf-8') as f:
+            reader = csv.DictReader(f, delimiter=';', quotechar="'")
+            record: dict = list(reader)[-1]
+
+        date, counter = record.values()
+        if mode == 'a':
+            with open(path, 'a', encoding='utf-8') as f:
+                f.write(f'{now};{int(counter)+1}\n')
+            return
+
+        await update.message.reply_text( # type: ignore
+            "Autism attuale: {1}, incrementato il {0}".format(
+                ita_string(datetime.strptime(date, "%Y-%m-%d %H:%M:%S")),
+                f'{int(counter):,}'.replace(',', '.'))
+        )
+
+    except FileNotFoundError:
+        if mode == 'a':
+            with open(path, 'x', encoding='utf-8') as f:
                 f.write('Timestamp;AutismCounter\n')
-            lines = []
+                f.write(f'{now};1\n')
+            return
 
-        counter = 0 if not lines else int(lines[-1].split(';')[-1].strip())
-        now = datetime.now()
+        await update.message.reply_text("Autism attuale: 0") # type: ignore
 
-        counter += 1
-        with open('autism_log.csv', 'a', encoding='utf-8') as f:
-            f.write(f'{now};{counter}\n')
+    except KeyError as e:
+        await update.message.reply_text( # type: ignore
+            f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
+            "/bossetti: aumenta silentemente il contatore;\n"
+            "/bossetti show: mostra il valore attuale del contatore."
+        )
 
 # /start
 async def slash_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -161,11 +171,12 @@ async def slash_todo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Escapa tutti i caratteri speciali Markdown V2
         return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
 
+    todo_md = os.path.join(os.getcwd(), TO_DO)
     if context.args:
         try:
             if context.args[0] != 'add' or len(context.args) <= 1:
                 raise KeyError
-            with open(os.path.join(os.getcwd(), 'ToDo.md'), 'a', encoding='utf-8', errors='ignore') as TODO:
+            with open(todo_md, 'a', encoding='utf-8', errors='ignore') as TODO:
                 TODO.write('- ' + ' '.join(context.args[1:]) + ';  \n')
             await update.message.reply_text("✅ Nuova voce aggiunta!")  # type: ignore
             return
@@ -178,7 +189,7 @@ async def slash_todo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         i = 0
         todos = []
-        with open(os.path.join(os.getcwd(), 'ToDo.md'), 'r', encoding='utf-8', errors='ignore') as TODO:
+        with open(todo_md, 'r', encoding='utf-8', errors='ignore') as TODO:
             for line in TODO:
                 match = re.search(r"- (.+)$", line)
                 if not match:
