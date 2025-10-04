@@ -9,6 +9,9 @@
       - [Visualizzare](#visualizzare)
       - [Aggiungere](#aggiungere)
     - [`/gabbia`](#gabbia)
+    - [`/bossetti`](#bossetti)
+      - [Incrementare](#incrementare)
+      - [Ultimo valore](#ultimo-valore)
   - [2. Trigger](#2-trigger)
   - [3. Messaggi automatici](#3-messaggi-automatici)
   - [4. Errori o Richieste](#4-errori-o-richieste)
@@ -138,6 +141,36 @@ Silenzia il bot per un periodo specificato (minuti).
 
 ---
 
+### `/bossetti`
+
+Mostra o aumenta il contatore autistico.
+
+Lo stato attuale del contatore **non** è memorizzato nel repository.
+
+#### Incrementare
+
+**Sintassi:**
+
+```plain
+/bossetti
+```
+
+#### Ultimo valore
+
+**Sintassi:**
+
+```plain
+/bossetti show
+```
+
+**Esempio di risposta:**
+
+```plain
+Autism attuale: 1.917, incrementato il 03/10/2025 21:05:14
+```
+
+---
+
 ## 2. Trigger
 
 *ANoDoRea* risponde automaticamente a determinati termini presenti nei messaggi.  
@@ -148,6 +181,9 @@ Le risposte sono predefinite e non richiedono comandi.
 | `negr`        | Risposta automatica preimpostata |
 | `palle`       | Risposta automatica preimpostata |
 | `sindaco`     | Risposta automatica preimpostata |
+| `uccell`      | Risposta automatica preimpostata |
+| `chorizo`     | Risposta automatica preimpostata |
+| `frocio`      | Risposta automatica preimpostata |
 
 Le risposte vengono inviate solo se una delle parole chiave è contenuta nel testo.  
 Se presenti più parole chiave, le risposte verranno concatenate ed enumerate in un solo messaggio.  
@@ -207,8 +243,8 @@ Contattare il Potere dell'Autismo Centrale.
 
 ## 7. Versione
 
-**Versione:** 1.2  
-**Data rilascio:** 2025-09-28
+**Versione:** 1.4  
+**Data rilascio:** 2025-10-04
 
 ---
 

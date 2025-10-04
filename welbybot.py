@@ -73,6 +73,42 @@ async def slash_gabbia(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "/gabbia <minuti>"
         )
 
+# /bossetti
+async def slash_bossetti(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if context.args:
+        try:
+            if context.args[0].lower() != 'show':
+                raise KeyError
+            with open('autism_log.csv', 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            datestr, counterstr = lines[-1].strip().split(';')
+            date: str = ita_string(datetime.strptime(datestr, '%Y-%m-%d %H:%M:%S.%f'))
+            counterstr = f'{counterstr:,}'.replace(',', '.')
+            await update.message.reply_text(f"Autism attuale: {counterstr}, incrementato il {date}") # type: ignore
+        except FileNotFoundError:
+            await update.message.reply_text("Autism attuale: 0") # type: ignore
+        except KeyError as e:
+            await update.message.reply_text( # type: ignore
+                f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
+                "/bossetti: aumenta silentemente il contatore;\n"
+                "/bossetti show: mostra il valore attuale del contatore."
+            )
+    else:
+        try:
+            with open('autism_log.csv', 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+        except FileNotFoundError:
+            with open('autism_log.csv', 'w', encoding='utf-8') as f:
+                f.write('Timestamp;AutismCounter\n')
+            lines = []
+
+        counter = 0 if not lines else int(lines[-1].split(';')[-1].strip())
+        now = datetime.now()
+
+        counter += 1
+        with open('autism_log.csv', 'a', encoding='utf-8') as f:
+            f.write(f'{now};{counter}\n')
+
 # /start
 async def slash_start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.message:
@@ -125,7 +161,6 @@ async def slash_todo(update: Update, context: ContextTypes.DEFAULT_TYPE):
         # Escapa tutti i caratteri speciali Markdown V2
         return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
 
-
     if context.args:
         try:
             if context.args[0] != 'add' or len(context.args) <= 1:
@@ -138,7 +173,7 @@ async def slash_todo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text( # type: ignore
                 f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
                 "/todo: Elenca le features da implementare;\n"
-                "/todo add Implementa un contatore autistico: Aggiunge riga alla To-Do list)"
+                "/todo add implementa_un_contatore_autistico: Aggiunge riga alla To-Do list)"
             )
     else:
         i = 0
@@ -181,12 +216,14 @@ async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def error_handler(update, context):
     try:
-        raise context.error
+        when = ita_string(datetime.now())
+        if context.error:
+            raise context.error
     except NetworkError as e:
-        print(f"[WARN] Network error: {e}, retrying...")
+        print(f"[WARN] {when} Network error: {e}, retrying...")
         await asyncio.sleep(5)
     except Exception as e:
-        print(f"[ERROR] Unhandled exception: {type(e).__name__}: {e}")
+        print(f"[ERROR] {when} Unhandled exception: {type(e).__name__}: {e}")
 
 # Avvio bot
 def main():
@@ -202,6 +239,7 @@ def main():
     app.add_handler(CommandHandler("schedule", slash_schedule))
     app.add_handler(CommandHandler("todo", slash_todo))
     app.add_handler(CommandHandler("gabbia", slash_gabbia))
+    app.add_handler(CommandHandler("bossetti", slash_bossetti))
 
     # Trigger
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, trigger_reply))
@@ -232,9 +270,11 @@ def main():
     try:
         app.run_polling()
     except KeyboardInterrupt:
-        print("[EXIT] Interruzione manuale (Ctrl+C).")
+        when = ita_string(datetime.now())
+        print(f"[EXIT] {when} Interruzione manuale (Ctrl+C).")
     except Exception as e:
-        print(f"[CRITICAL] {type(e).__name__}: {e}")
+        when = ita_string(datetime.now())
+        print(f"[CRITICAL] {when} {type(e).__name__}: {e}")
     finally:
         print("[EXIT] WelbyBot terminato correttamente.")
 
