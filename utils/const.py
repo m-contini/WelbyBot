@@ -2,7 +2,7 @@
 
 from pathlib import Path
 import re
-from funcs import ita_dtime
+from .funcs import ita_dtime # type: ignore
 
 PARENT = Path.cwd().parent
 
@@ -24,7 +24,6 @@ def startup_msg() -> str:
             f"v{version} ({released_on})"
         )
     return '\n'.join(msg)
-STARTUP_MSG = startup_msg()
 
 def shutdown_msg() -> str:
     msg = (
@@ -32,4 +31,6 @@ def shutdown_msg() -> str:
         "Alla prossima (ah che) _scopata_!"
     )
     return '\n'.join(msg)
+
+STARTUP_MSG = startup_msg()
 SHUTDOWN_MSG = shutdown_msg()

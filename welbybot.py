@@ -6,11 +6,7 @@ from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.error import NetworkError
 
-from apscheduler.schedulers.background import BackgroundScheduler # type: ignore
-
-from datetime import datetime, timedelta
-import re
-import csv
+from apscheduler.schedulers.background import BackgroundScheduler  # type: ignore
 
 from dotenv import load_dotenv
 from os import chdir, getenv
@@ -18,6 +14,7 @@ from pathlib import Path
 import sys
 
 from utils.funcs import log_print
+from utils.commands import _help, _gabbia, _bossetti, _schedule, _todo
 
 #: Messaggio manuale da shell Bash
 #: curl -X POST "https://api.telegram.org/bot<TOKEN>/sendMessage" -d "chat_id=<GROUP_ID>&text=CIMMIA 🦧"
@@ -46,19 +43,15 @@ async def send_shutdown_message(bot: Bot):
     from utils.const import SHUTDOWN_MSG
     await bot.send_message(chat_id=GROUP_ID, text=SHUTDOWN_MSG, parse_mode=ParseMode.MARKDOWN)
 
-from utils.commands import _help, _gabbia, _bossetti, _schedule, _todo
-
 # /help
 async def slash_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     try:
-        this_script = Path(__file__)
-        text = _help(this_script, context.args)
-        await update.message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN_V2) # type: ignore
-    except KeyError as e:
+        text = _help(Path(__file__), context.args)
+        await update.message.reply_text(text=text)#, parse_mode=ParseMode.MARKDOWN_V2) # type: ignore
+    except (KeyError, FileNotFoundError) as e:
         await update.message.reply_text( # type: ignore
             f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
-            "/help: mostra elenco dei comandi disponibili"
+            "/help: Mostra elenco dei comandi disponibili"
         )
 
 # /gabbia <minuti>
@@ -76,16 +69,15 @@ async def slash_gabbia(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # /bossetti <show>
 async def slash_bossetti(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     path = CWD / BOSSETTI
     try:
         msg = _bossetti(path, context.args)
-        await update.message.reply_text(msg) # type: ignore
+        await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2) # type: ignore
     except KeyError as e:
         await update.message.reply_text( # type: ignore
             f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
-            "/bossetti: aumenta silentemente il contatore;\n"
-            "/bossetti show: mostra il valore attuale del contatore."
+            "/bossetti: Aumenta silentemente il contatore;\n"
+            "/bossetti show: Mostra il valore attuale del contatore."
         )
 
 # Invio messaggio programmato, con data e ora di schedulazione
@@ -125,12 +117,10 @@ async def slash_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # /todo "add", "Feature", "da", "implementare"
 async def slash_todo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     todo_md = (CWD / TO_DO)
-
     try:
         msg = _todo(todo_md, context.args)
-        await update.message.reply_text(msg)  # type: ignore
+        await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2)  # type: ignore
     except KeyError as e:
         await update.message.reply_text( # type: ignore
             f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
@@ -205,7 +195,7 @@ def main():
         scheduler.shutdown(wait=False)
         log_print('INFO', "✅ Scheduler chiuso correttamente")
 
-    log_print('INFO', "✅ WelbyBot attivo!" + "Premi Ctrl+C per uscire.\n".upper())
+    log_print('INFO', "✅ WelbyBot attivo! " + "Premi Ctrl+C per uscire.\n".upper())
 
     # Registra i callback
     if not SILENT:

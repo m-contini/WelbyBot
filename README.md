@@ -244,7 +244,7 @@ Contattare il Potere dell'Autismo Centrale.
 
 ## 7. Versione
 
-**Versione:** 1.6  
+**Versione:** 1.7  
 **Data rilascio:** 2025-10-05
 
 ---
