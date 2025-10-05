@@ -17,6 +17,8 @@ from os import chdir, getenv
 from pathlib import Path
 import sys
 
+from utils.funcs import log_print
+
 #: Messaggio manuale da shell Bash
 #: curl -X POST "https://api.telegram.org/bot<TOKEN>/sendMessage" -d "chat_id=<GROUP_ID>&text=CIMMIA 🦧"
 
@@ -27,81 +29,32 @@ CWD = Path.cwd()
 
 
 load_dotenv(CWD / '.env')
-TOKEN = getenv('TOKEN', '')  
+TOKEN    = getenv('TOKEN', '')  
 GROUP_ID = int(getenv('GROUP_ID', ''))
 BOSSETTI = getenv('BOSSETTI', '')
-TO_DO = getenv('TO_DO', '')
+TO_DO    = getenv('TO_DO', '')
 
 scheduler = BackgroundScheduler()
 
 SILENT = 'silent' in sys.argv
 
 async def send_startup_message(bot: Bot):
-    GITHUB_PAGE = '[WelbyBot](https://github.com/m-contini/WelbyBot)'
-
-    # Legge versione e data release da README
-    with open(CWD / 'README.md', 'r', encoding='utf-8', errors='ignore') as README:
-        match = re.search(r"Versione:.+?(\d*\.\d*).+?Data rilascio:.+?(\d+-\d+-\d+)", README.read(), re.DOTALL)
-        if match:
-            VERSION, RELEASED = match.groups()
-
-    text = (
-        "🤖 *WelbyBot* - *Online*. *Me ne frego!*",
-        f"(Ultima _scopata_: {ita_string(datetime.now())})",
-        f"Incontrami: {GITHUB_PAGE}",
-        f"v{VERSION} ({RELEASED})"
-    )
-    await bot.send_message(chat_id=GROUP_ID, text='\n'.join(text), parse_mode=ParseMode.MARKDOWN)
+    from utils.const import STARTUP_MSG
+    await bot.send_message(chat_id=GROUP_ID, text=STARTUP_MSG, parse_mode=ParseMode.MARKDOWN)
 
 async def send_shutdown_message(bot: Bot):
-    text = (
-        "🤖 *WelbyBot* - *Offline*.",
-        "Alla prossima (ah che) _scopata_!"
-    )
-    await bot.send_message(chat_id=GROUP_ID, text='\n'.join(text), parse_mode=ParseMode.MARKDOWN)
+    from utils.const import SHUTDOWN_MSG
+    await bot.send_message(chat_id=GROUP_ID, text=SHUTDOWN_MSG, parse_mode=ParseMode.MARKDOWN)
 
-def ita_string(dt: datetime) -> str:    return dt.strftime("%d/%m/%Y %H:%M:%S")
-
-def escape_markdown_v2(text: str) -> str:
-    # Escapa tutti i caratteri speciali Markdown V2
-    return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
+from utils.commands import _help, _gabbia, _bossetti, _schedule, _todo
 
 # /help
 async def slash_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
-        if context.args:
-            raise KeyError
-
-        with open(Path(__file__), 'r', encoding='utf-8') as f:
-            code = f.read()
-
-        results = {}
-
-        func_re = re.compile(
-            r'^async\s+def\s+(slash_\w+)\s*\([^)]*\):\n'
-            r'(.*?)(?=^async\s+def\s+slash_|\Z)',
-            re.DOTALL | re.MULTILINE
-        )
-        string_line_re = re.compile(
-            r'^[ \t]*(?:[fF])?(?P<s>"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\')\s*,?\s*(?:#.*)?$',
-            re.MULTILINE
-        )
-
-        for m in func_re.finditer(code):
-            cmd = m.group(1)      # nome comando (es. "gabbia")
-            body = m.group(2)     # tutto il corpo della funzione
-            if 'CRY!' not in body:
-                continue
-            after = body[body.index('CRY!'):]   # da CRY! fino alla fine della funzione
-            strings = [g.group('s') for g in string_line_re.finditer(after)]
-            if strings:
-                results[cmd.replace('slash_', '')] = [s.replace('"', '') for s in strings if 'CRY!' not in s]
-
-        await update.message.reply_text( # type: ignore
-            '```markdown\n' + '\n'.join([(f'- {k}:\n  {'\n  '.join(v)}\n') for k,v in results.items()]) + '\n```',
-            parse_mode=ParseMode.MARKDOWN_V2
-        )
+        this_script = Path(__file__)
+        text = _help(this_script, context.args)
+        await update.message.reply_text(text=text, parse_mode=ParseMode.MARKDOWN_V2) # type: ignore
     except KeyError as e:
         await update.message.reply_text( # type: ignore
             f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
@@ -111,15 +64,10 @@ async def slash_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # /gabbia <minuti>
 async def slash_gabbia(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        if not context.args or len(context.args) != 1:
-            raise KeyError
-        minutes = float(context.args[0])
-        if minutes <= 0:
-            raise ValueError
-        until = datetime.now() + timedelta(minutes=minutes)
-        await update.message.reply_text(f"Ok, vado in gabbia fino a: {ita_string(until)}.\nSi spera si scopi. Esperémos que escopamos; nucha chupar el chorrizo.") # type: ignore
-        await asyncio.sleep(minutes * 60)
-        await update.message.reply_text("Sono uscito dalla gabbia, che scopata che mi son fatto!") # type: ignore
+        in_cage, seconds, out_cage = _gabbia(context.args)
+        await update.message.reply_text(in_cage) # type: ignore
+        await asyncio.sleep(seconds)
+        await update.message.reply_text(out_cage) # type: ignore
     except (KeyError, ValueError) as e:
         await update.message.reply_text( # type: ignore
             f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
@@ -130,38 +78,9 @@ async def slash_gabbia(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def slash_bossetti(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     path = CWD / BOSSETTI
-    args: list[str] = context.args # type: ignore
-    mode = 'r' if (args is not None and len(args) > 0) else 'a'
     try:
-        if mode == 'r' and args[0].lower() != 'show':
-            raise KeyError(args[0])
-
-        now = datetime.now().replace(microsecond=0)
-        with open(path, 'r', encoding='utf-8') as f:
-            reader = csv.DictReader(f, delimiter=';', quotechar="'")
-            record: dict = list(reader)[-1]
-
-        date, counter = record.values()
-        if mode == 'a':
-            with open(path, 'a', encoding='utf-8') as f:
-                f.write(f'{now};{int(counter)+1}\n')
-            return
-
-        await update.message.reply_text( # type: ignore
-            "Autism attuale: {1}, incrementato il {0}".format(
-                ita_string(datetime.strptime(date, "%Y-%m-%d %H:%M:%S")),
-                f'{int(counter):,}'.replace(',', '.'))
-        )
-
-    except FileNotFoundError:
-        if mode == 'a':
-            with open(path, 'x', encoding='utf-8') as f:
-                f.write('Timestamp;AutismCounter\n')
-                f.write(f'{now};1\n')
-            return
-
-        await update.message.reply_text("Autism attuale: 0") # type: ignore
-
+        msg = _bossetti(path, context.args)
+        await update.message.reply_text(msg) # type: ignore
     except KeyError as e:
         await update.message.reply_text( # type: ignore
             f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
@@ -170,24 +89,19 @@ async def slash_bossetti(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 # Invio messaggio programmato, con data e ora di schedulazione
-async def scheduled_message(context: ContextTypes.DEFAULT_TYPE, text: str, dt: datetime):
-    date, time = ita_string(dt).split()
-    msg = text + f'\n(Questo messaggio fu programmato in data {date} alle ore {time})'
-    await context.bot.send_message(chat_id=GROUP_ID, text=msg)
+async def scheduled_message(context: ContextTypes.DEFAULT_TYPE, msg: str, dt: str):
+    await context.bot.send_message(
+        chat_id=GROUP_ID,
+        text='{0}\n(Questo messaggio fu programmato in data {1} alle ore {2})'.format(
+            msg, *dt.split(' ')
+        )
+    )
 
 # /schedule m 10 Questo messaggio arriva tra 10 minuti
 async def slash_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
-        if not context.args or len(context.args) < 3:
-            raise KeyError
-
-        unit, value = context.args[0], float(context.args[1])
-        text = " ".join(context.args[2:])
-
-        scheduled_on = datetime.now()
-        conversion = dict(s=1, m=60, h=3600, d=3600*24)[unit]
-        scheduled_for = scheduled_on + timedelta(seconds=value*conversion)
+        text, scheduled_on, scheduled_for = _schedule(context.args)
 
         # Salva loop principale (quello del bot)
         loop = asyncio.get_running_loop()
@@ -213,35 +127,16 @@ async def slash_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def slash_todo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     todo_md = (CWD / TO_DO)
-    if context.args:
-        try:
-            if context.args[0] != 'add' or len(context.args) <= 1:
-                raise KeyError
-            with open(todo_md, 'a', encoding='utf-8', errors='ignore') as TODO:
-                TODO.write('- ' + ' '.join(context.args[1:]) + ';  \n')
-            await update.message.reply_text("✅ Nuova voce aggiunta!")  # type: ignore
-            return
-        except KeyError as e:
-            await update.message.reply_text( # type: ignore
-                f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
-                "/todo: Elenca le features da implementare;\n"
-                "/todo add testo: Aggiunge testo alla To-Do list."
-            )
-    else:
-        i = 0
-        todos = []
-        with open(todo_md, 'r', encoding='utf-8', errors='ignore') as TODO:
-            for line in TODO:
-                match = re.search(r"- (.+)$", line)
-                if not match:
-                    continue
-                i += 1
-                line = rf'{i}. {match.group(1).strip()}'
-                todos.append(escape_markdown_v2(line))
-        if todos:
-            await update.message.reply_text(text='\n'.join(todos), parse_mode=ParseMode.MARKDOWN_V2) # type: ignore
-        else:
-            await update.message.reply_text("Nessuna voce trovata") # type: ignore
+
+    try:
+        msg = _todo(todo_md, context.args)
+        await update.message.reply_text(msg)  # type: ignore
+    except KeyError as e:
+        await update.message.reply_text( # type: ignore
+            f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
+            "/todo: Elenca le features da implementare;\n"
+            "/todo add testo: Aggiunge testo alla To-Do list."
+        )
 
 # Trigger
 async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -268,14 +163,13 @@ async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def error_handler(update, context):
     if context.error:
-        when = ita_string(datetime.now())
         try:
             raise context.error
         except NetworkError as e:
-            print(f"[WARN] | {when} | Network error: {e}, retrying...")
+            log_print('WARNING', f"Network error: {e}, retrying...")
             await asyncio.sleep(5)
         except Exception as e:
-            print(f"[ERROR] | {when} | Unhandled exception: {type(e).__name__}: {e}")
+            log_print('ERROR', f"Unhandled exception: {type(e).__name__}: {e}")
 
 # Avvio bot
 def main():
@@ -303,31 +197,32 @@ def main():
     # Funzioni di startup/shutdown automatiche
     async def on_startup(app):
         await send_startup_message(bot)
-        print("\n✅ [STARTUP] Messaggio inviato al gruppo")
+        log_print('INFO', "✅ [STARTUP] Messaggio inviato al gruppo")
 
     async def on_shutdown(app):
         await send_shutdown_message(bot)
-        print("\n✅ Messaggio di chiusura inviato")
+        log_print('INFO', "✅ Messaggio di chiusura inviato")
         scheduler.shutdown(wait=False)
-        print("\n✅ Scheduler chiuso correttamente")
+        log_print('INFO', "✅ Scheduler chiuso correttamente")
 
-    print("\n\t✅ WelbyBot attivo!" + "Premi Ctrl+C per uscire.\n".upper())
+    log_print('INFO', "✅ WelbyBot attivo!" + "Premi Ctrl+C per uscire.\n".upper())
 
     # Registra i callback
     if not SILENT:
         app.post_init = on_startup
         app.post_shutdown = on_shutdown
     else:
-        print("\t\t-- Modalità Silenziosa --".upper(), "\t\t-- ANoDoRea non si presenterà al suo ingresso in chat -- \n", sep='\n')
+        log_print('INFO', "\t\t-- Modalità Silenziosa --".upper())
+        log_print('INFO', "\t\t-- ANoDoRea non si presenterà al suo ingresso in chat -- \n")
 
     try:
         app.run_polling()
     except KeyboardInterrupt:
-        print(f"\n[EXIT] | {ita_string(datetime.now())} | Interruzione manuale (Ctrl+C).")
+        log_print('EXIT', "Interruzione manuale (Ctrl+C).")
     except Exception as e:
-        print(f"\n[CRITICAL] | {ita_string(datetime.now())} | {type(e).__name__}: {e}")
+        log_print('CRITICAL', f"{type(e).__name__}: {e}")
     finally:
-        print(f"\n[EXIT] | {ita_string(datetime.now())} | WelbyBot terminato correttamente.")
+        log_print('INFO', "✅ WelbyBot terminato correttamente.")
 
 
 if __name__ == "__main__":
