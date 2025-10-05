@@ -4,6 +4,7 @@
   - [WelbyBot](#welbybot)
   - [1. Comandi disponibili](#1-comandi-disponibili)
     - [`/schedule`](#schedule)
+    - [`/help`](#help)
     - [`/todo`](#todo)
       - [Visualizzare](#visualizzare)
       - [Aggiungere](#aggiungere)
@@ -55,6 +56,17 @@ Programma l’invio di un messaggio nel gruppo dopo un intervallo specificato.
 ```
 
 Il messaggio pianificato includerà la data e l’ora in cui è stato schedulato.
+
+---
+
+### `/help`
+
+Mostra un riepilogo dei comandi disponibili (preceduti da `/`) con brevi descrizioni e argomenti da passare.
+**Sintassi:**
+
+```plain
+/help
+```
 
 ---
 
@@ -232,8 +244,8 @@ Contattare il Potere dell'Autismo Centrale.
 
 ## 7. Versione
 
-**Versione:** 1.4  
-**Data rilascio:** 2025-10-04
+**Versione:** 1.5  
+**Data rilascio:** 2025-10-05
 
 ---
 

@@ -13,19 +13,24 @@ import re
 import csv
 
 from dotenv import load_dotenv
-import os
+from os import chdir, getenv
+from pathlib import Path
 import sys
-
 
 #: Messaggio manuale da shell Bash
 #: curl -X POST "https://api.telegram.org/bot<TOKEN>/sendMessage" -d "chat_id=<GROUP_ID>&text=CIMMIA 🦧"
 
+if sys.argv[0] != Path(__file__).name:
+    chdir(Path(__file__).parent)
 
-load_dotenv(os.path.join(os.getcwd(), '.env'))
-TOKEN = os.getenv('TOKEN', '')  
-GROUP_ID = int(os.getenv('GROUP_ID', ''))
-BOSSETTI = os.getenv('BOSSETTI', '')
-TO_DO = os.getenv('TO_DO', '')
+CWD = Path.cwd()
+
+
+load_dotenv(CWD / '.env')
+TOKEN = getenv('TOKEN', '')  
+GROUP_ID = int(getenv('GROUP_ID', ''))
+BOSSETTI = getenv('BOSSETTI', '')
+TO_DO = getenv('TO_DO', '')
 
 scheduler = BackgroundScheduler()
 
@@ -35,7 +40,7 @@ async def send_startup_message(bot: Bot):
     GITHUB_PAGE = '[WelbyBot](https://github.com/m-contini/WelbyBot)'
 
     # Legge versione e data release da README
-    with open(os.path.join(os.getcwd(), 'README.md'), 'r', encoding='utf-8', errors='ignore') as README:
+    with open(CWD / 'README.md', 'r', encoding='utf-8', errors='ignore') as README:
         match = re.search(r"Versione:.+?(\d*\.\d*).+?Data rilascio:.+?(\d+-\d+-\d+)", README.read(), re.DOTALL)
         if match:
             VERSION, RELEASED = match.groups()
@@ -56,6 +61,52 @@ async def send_shutdown_message(bot: Bot):
     await bot.send_message(chat_id=GROUP_ID, text='\n'.join(text), parse_mode=ParseMode.MARKDOWN)
 
 def ita_string(dt: datetime) -> str:    return dt.strftime("%d/%m/%Y %H:%M:%S")
+
+def escape_markdown_v2(text: str) -> str:
+    # Escapa tutti i caratteri speciali Markdown V2
+    return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
+
+# /help
+async def slash_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+
+    try:
+        if context.args:
+            raise KeyError
+
+        with open(Path(__file__), 'r', encoding='utf-8') as f:
+            code = f.read()
+
+        results = {}
+
+        func_re = re.compile(
+            r'^async\s+def\s+(slash_\w+)\s*\([^)]*\):\n'
+            r'(.*?)(?=^async\s+def\s+slash_|\Z)',
+            re.DOTALL | re.MULTILINE
+        )
+        string_line_re = re.compile(
+            r'^[ \t]*(?:[fF])?(?P<s>"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\')\s*,?\s*(?:#.*)?$',
+            re.MULTILINE
+        )
+
+        for m in func_re.finditer(code):
+            cmd = m.group(1)      # nome comando (es. "gabbia")
+            body = m.group(2)     # tutto il corpo della funzione
+            if 'CRY!' not in body:
+                continue
+            after = body[body.index('CRY!'):]   # da CRY! fino alla fine della funzione
+            strings = [g.group('s') for g in string_line_re.finditer(after)]
+            if strings:
+                results[cmd.replace('slash_', '')] = [s.replace('"', '') for s in strings if 'CRY!' not in s]
+
+        await update.message.reply_text( # type: ignore
+            '```markdown\n' + '\n'.join([(f'- {k}:\n  {'\n  '.join(v)}\n') for k,v in results.items()]) + '\n```',
+            parse_mode=ParseMode.MARKDOWN_V2
+        )
+    except KeyError as e:
+        await update.message.reply_text( # type: ignore
+            f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
+            "/help: mostra elenco dei comandi disponibili"
+        )
 
 # /gabbia <minuti>
 async def slash_gabbia(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -78,7 +129,7 @@ async def slash_gabbia(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # /bossetti <show>
 async def slash_bossetti(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    path = os.path.join(os.getcwd(), BOSSETTI)
+    path = CWD / BOSSETTI
     args: list[str] = context.args # type: ignore
     mode = 'r' if (args is not None and len(args) > 0) else 'a'
     try:
@@ -161,11 +212,7 @@ async def slash_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # /todo "add", "Feature", "da", "implementare"
 async def slash_todo(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
-    def escape_markdown_v2(text: str) -> str:
-        # Escapa tutti i caratteri speciali Markdown V2
-        return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
-
-    todo_md = os.path.join(os.getcwd(), TO_DO)
+    todo_md = (CWD / TO_DO)
     if context.args:
         try:
             if context.args[0] != 'add' or len(context.args) <= 1:
@@ -178,7 +225,7 @@ async def slash_todo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text( # type: ignore
                 f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
                 "/todo: Elenca le features da implementare;\n"
-                "/todo add implementa_un_contatore_autistico: Aggiunge riga alla To-Do list)"
+                "/todo add testo: Aggiunge testo alla To-Do list."
             )
     else:
         i = 0
@@ -241,6 +288,7 @@ def main():
 
     # Comandi
     # app.add_handler(CommandHandler("start", slash_start))
+    app.add_handler(CommandHandler("help", slash_help))
     app.add_handler(CommandHandler("schedule", slash_schedule))
     app.add_handler(CommandHandler("todo", slash_todo))
     app.add_handler(CommandHandler("gabbia", slash_gabbia))
