@@ -4,7 +4,7 @@ from pathlib import Path
 import re
 from .funcs import ita_dtime # type: ignore
 
-PARENT = Path.cwd().parent
+PARENT = Path(__file__).parent.parent
 
 # Legge versione e data release da README
 GITHUB_PAGE = '[WelbyBot](https://github.com/m-contini/WelbyBot)'
