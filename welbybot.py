@@ -152,9 +152,9 @@ async def reply_trigger(update: Update, context: ContextTypes.DEFAULT_TYPE) -> s
         words = triggers['trigger'].tolist()
         triggereds = re.findall('|'.join(words), text)
         if triggereds:
-            reply = triggers.set_index('trigger').loc[triggereds]['risposta'].values
+            reply = set(triggers.set_index('trigger').loc[triggereds]['risposta'].values)
             if len(reply) == 1:
-                msg = reply[0]
+                msg = next(iter(reply))
             else:
                 msg = f'Ho {len(reply)} osservazioni da fare:\n' + '\n'.join(f'{i}. {txt.replace("\n", " ")}' for i, txt in enumerate(reply, start=1))
             await update.message.reply_text(msg)
