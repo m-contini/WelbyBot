@@ -1,5 +1,14 @@
 #! /usr/bin/python
 
+import sys
+SILENT = 'silent' in sys.argv
+
+# 'silent' è l'unico argomento accettabile, diversamente esci subito
+from utils.funcs import log_print
+if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] != 'silent'):
+    log_print('ERROR', "Uso corretto: `welbybot` o `welbybot silent`.\n")
+    sys.exit(1)
+
 import asyncio
 import re
 import pandas as pd
@@ -15,7 +24,6 @@ from os import chdir, getenv
 from pathlib import Path
 import sys
 
-from utils.funcs import log_print
 from utils.commands import help, gabbia, bossetti, schedule, todo, venerdi
 from utils.const import TRIGGERS,DEMONIMI
 
@@ -37,8 +45,6 @@ TO_DO    = getenv('TO_DO', '')
 triggers: pd.DataFrame = pd.concat([pd.read_csv(TRIGGERS), pd.read_csv(DEMONIMI)], axis=0, ignore_index=True)
 
 scheduler = BackgroundScheduler()
-
-SILENT = 'silent' in sys.argv
 
 async def send_startup_message(bot: Bot):
     from utils.const import startup_msg

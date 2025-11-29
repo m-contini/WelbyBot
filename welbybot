@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+clear
+python "$(dirname "$0")/welbybot.py" "$@"
