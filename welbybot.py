@@ -14,7 +14,7 @@ from pathlib import Path
 import sys
 
 from utils.funcs import log_print
-from utils.commands import _help, _gabbia, _bossetti, _schedule, _todo
+from utils.commands import help, gabbia, bossetti, schedule, todo, venerdi
 
 #: Messaggio manuale da shell Bash
 #: curl -X POST "https://api.telegram.org/bot<TOKEN>/sendMessage" -d "chat_id=<GROUP_ID>&text=CIMMIA 🦧"
@@ -36,17 +36,19 @@ scheduler = BackgroundScheduler()
 SILENT = 'silent' in sys.argv
 
 async def send_startup_message(bot: Bot):
-    from utils.const import STARTUP_MSG
+    from utils.const import startup_msg
+    STARTUP_MSG = startup_msg()
     await bot.send_message(chat_id=GROUP_ID, text=STARTUP_MSG, parse_mode=ParseMode.MARKDOWN)
 
 async def send_shutdown_message(bot: Bot):
-    from utils.const import SHUTDOWN_MSG
+    from utils.const import shutdown_msg
+    SHUTDOWN_MSG = shutdown_msg()
     await bot.send_message(chat_id=GROUP_ID, text=SHUTDOWN_MSG, parse_mode=ParseMode.MARKDOWN)
 
 # /help
 async def slash_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        text = _help(Path(__file__), context.args)
+        text = help(Path(__file__), context.args)
         await update.message.reply_text(text=text)#, parse_mode=ParseMode.MARKDOWN_V2) # type: ignore
     except (KeyError, FileNotFoundError) as e:
         await update.message.reply_text( # type: ignore
@@ -57,7 +59,7 @@ async def slash_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # /gabbia <minuti>
 async def slash_gabbia(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        in_cage, seconds, out_cage = _gabbia(context.args)
+        in_cage, seconds, out_cage = gabbia(context.args)
         await update.message.reply_text(in_cage) # type: ignore
         await asyncio.sleep(seconds)
         await update.message.reply_text(out_cage) # type: ignore
@@ -71,7 +73,7 @@ async def slash_gabbia(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def slash_bossetti(update: Update, context: ContextTypes.DEFAULT_TYPE):
     path = CWD / BOSSETTI
     try:
-        msg = _bossetti(path, context.args)
+        msg = bossetti(path, context.args)
         await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2) # type: ignore
     except KeyError as e:
         await update.message.reply_text( # type: ignore
@@ -93,7 +95,7 @@ async def scheduled_message(context: ContextTypes.DEFAULT_TYPE, msg: str, dt: st
 async def slash_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     try:
-        text, scheduled_on, scheduled_for = _schedule(context.args)
+        text, scheduled_on, scheduled_for = schedule(context.args)
 
         # Salva loop principale (quello del bot)
         loop = asyncio.get_running_loop()
@@ -119,13 +121,23 @@ async def slash_schedule(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def slash_todo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     todo_md = (CWD / TO_DO)
     try:
-        msg = _todo(todo_md, context.args)
+        msg = todo(todo_md, context.args)
         await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN_V2)  # type: ignore
     except KeyError as e:
         await update.message.reply_text( # type: ignore
             f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
             "/todo: Elenca le features da implementare;\n"
             "/todo add testo: Aggiunge testo alla To-Do list."
+        )
+
+async def slash_venerdi(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        msg = venerdi(context.args)
+        await update.message.reply_text(msg, parse_mode=ParseMode.MARKDOWN)  # type: ignore
+    except KeyError as e:
+        await update.message.reply_text( # type: ignore
+            f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
+            "/venerdi: Seleziona un pub casuale in cui andare."
         )
 
 # Trigger
@@ -177,6 +189,7 @@ def main():
     app.add_handler(CommandHandler("todo", slash_todo))
     app.add_handler(CommandHandler("gabbia", slash_gabbia))
     app.add_handler(CommandHandler("bossetti", slash_bossetti))
+    app.add_handler(CommandHandler("venerdi", slash_venerdi))
 
     # Trigger
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, trigger_reply))

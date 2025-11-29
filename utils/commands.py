@@ -4,10 +4,11 @@ import csv
 from datetime import datetime, timedelta
 from pathlib import Path
 import re
-from .funcs import ita_dtime, escape_markdown_v2 # type: ignore
+from random import randint
+from .funcs import ita_dtime, escape_markdown_v2,escape_md2 # type: ignore
 
 # /help
-def _help(path: Path, args) -> str:
+def help(path: Path, args) -> str:
 
     if args:
         raise KeyError("/help non accetta argomenti.")
@@ -34,7 +35,7 @@ def _help(path: Path, args) -> str:
     )
 
 # /gabbia <minuti>
-def _gabbia(args) -> tuple[str, float, str]:
+def gabbia(args) -> tuple[str, float, str]:
     if not args or len(args) != 1:
         raise KeyError
     minutes = float(*args[0])
@@ -51,7 +52,7 @@ def _gabbia(args) -> tuple[str, float, str]:
     return in_cage, seconds, out_cage
 
 # /bossetti
-def _bossetti(path: Path, args) -> str | None:
+def bossetti(path: Path, args) -> str | None:
 
     mode = 'r' if (args is not None and len(args) > 0) else 'a'
     if args is None:
@@ -86,7 +87,7 @@ def _bossetti(path: Path, args) -> str | None:
         return "Autism attuale: 0"
 
 # /schedule
-def _schedule(args) -> tuple[str, str, datetime]:
+def schedule(args) -> tuple[str, str, datetime]:
 
     if not args or len(args) < 3:
         raise KeyError
@@ -100,7 +101,7 @@ def _schedule(args) -> tuple[str, str, datetime]:
     return text, ita_dtime(scheduled_on), scheduled_for
 
 # /todo
-def _todo(path: Path, args) -> str:
+def todo(path: Path, args) -> str:
 
     if args:
         if args[0] != 'add' or len(args) <= 1:
@@ -126,3 +127,35 @@ def _todo(path: Path, args) -> str:
             msg = "Nessuna voce trovata"
 
     return escape_markdown_v2(msg)
+
+def venerdi(args) -> str:
+    if args:
+        raise KeyError("/venerdi non accetta argomenti.")
+
+    posti = [
+        "Travel",
+        "Consorzio Birre",
+        "Julep",
+        "Blow",
+        "L'amante",
+        "Lumen",
+        "Scott Joplin",
+        "Magafurla",
+        "Madrigal",
+        "La Baracca",
+        "La Ribalta",
+        "Why not",
+        "Birrificio italiano",
+        "Birreria italiana",
+        "Scott Duff",
+    ]
+
+    posto = escape_md2(posti[randint(0, len(posti) - 1)])
+
+    msg = f"Oh sì cogno, recati presso *{posto}*"
+
+    if datetime.now().weekday() != 4:
+        extra = escape_md2("Comunque oggi non è venerdì diocane!")
+        msg += f"\n\n_{extra}_"
+
+    return msg

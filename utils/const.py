@@ -31,6 +31,3 @@ def shutdown_msg() -> str:
         "Alla prossima (ah che) _scopata_!"
     )
     return '\n'.join(msg)
-
-STARTUP_MSG = startup_msg()
-SHUTDOWN_MSG = shutdown_msg()

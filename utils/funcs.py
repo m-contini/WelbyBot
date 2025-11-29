@@ -12,6 +12,10 @@ def escape_markdown_v2(text: str) -> str:
     # Escapa tutti i caratteri speciali Markdown V2
     return re.sub(r'([_*\[\]()~`>#+\-=|{}.!])', r'\\\1', text)
 
+def escape_md2(text: str) -> str:
+    special_chars = r"\`[]()~>#+-=|{}.!"
+    return re.sub(f"([{re.escape(special_chars)}])", r"\\\1", text)
+
 def log_print(
     type: Literal[
         'INFO', 'WARNING', 'ERROR', 'CRITICAL', 'EXIT'

@@ -12,6 +12,7 @@
     - [`/bossetti`](#bossetti)
       - [Incrementare](#incrementare)
       - [Ultimo valore](#ultimo-valore)
+    - [`/venerdi`](#venerdi)
   - [2. Trigger](#2-trigger)
   - [3. Messaggi automatici](#3-messaggi-automatici)
   - [4. Errori o Richieste](#4-errori-o-richieste)
@@ -172,6 +173,23 @@ Autism attuale: 1.917, incrementato il 03/10/2025 21:05:14
 
 ---
 
+### `/venerdi`
+
+Istruisce su dove si debba andare di venerdì sera in caso di indecisione
+
+**Sintassi:**
+
+```plain
+/venerdi
+```
+
+**Esempio di risposta:**
+
+> Oh sì cogno, recati presso **Blow**  
+> *Comunque oggi non è venerdì diocane!*
+
+---
+
 ## 2. Trigger
 
 *ANoDoRea* risponde automaticamente a determinati termini presenti nei messaggi.  
@@ -244,7 +262,7 @@ Contattare il Potere dell'Autismo Centrale.
 
 ## 7. Versione
 
-**Versione:** 1.7  
+**Versione:** 1.8  
 **Data rilascio:** 2025-10-05
 
 ---
