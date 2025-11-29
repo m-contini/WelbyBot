@@ -31,3 +31,6 @@ def shutdown_msg() -> str:
         "Alla prossima (ah che) _scopata_!"
     )
     return '\n'.join(msg)
+
+DEMONIMI = PARENT / 'private' / 'demonyms.csv'
+TRIGGERS = PARENT / 'private' / 'triggers.csv'

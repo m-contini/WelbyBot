@@ -1,6 +1,8 @@
 #! /usr/bin/python
 
 import asyncio
+import re
+import pandas as pd
 from telegram import Update, Bot
 from telegram.constants import ParseMode
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
@@ -15,6 +17,7 @@ import sys
 
 from utils.funcs import log_print
 from utils.commands import help, gabbia, bossetti, schedule, todo, venerdi
+from utils.const import TRIGGERS,DEMONIMI
 
 #: Messaggio manuale da shell Bash
 #: curl -X POST "https://api.telegram.org/bot<TOKEN>/sendMessage" -d "chat_id=<GROUP_ID>&text=CIMMIA 🦧"
@@ -30,6 +33,8 @@ TOKEN    = getenv('TOKEN', '')
 GROUP_ID = int(getenv('GROUP_ID', ''))
 BOSSETTI = getenv('BOSSETTI', '')
 TO_DO    = getenv('TO_DO', '')
+
+triggers: pd.DataFrame = pd.concat([pd.read_csv(TRIGGERS), pd.read_csv(DEMONIMI)], axis=0, ignore_index=True)
 
 scheduler = BackgroundScheduler()
 
@@ -141,27 +146,18 @@ async def slash_venerdi(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 # Trigger
-async def trigger_reply(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def reply_trigger(update: Update, context: ContextTypes.DEFAULT_TYPE) -> str | None:
     if update.message and update.message.text:
         text = update.message.text.lower()
-        reply = []
-        if "negr" in text:
-            reply.append("Negri di merda fuori di qua subito 🌻")
-        if "palle" in text:
-            reply.append("Ah come dici? Ti piacciono i ppall mmocc?!")
-        if "sindaco" in text:
-            reply.append("Oh sì Sindaco ingoia tutto Sindaco.")
-        if "uccell" in text:
-            reply.append("Uccellino di merda se ti becco ti ammazzo.")
-        if "chorizo" in text:
-            reply.append("Oh sì chorizo. Siempre chupando el chorizo, finocchio del cazzo.")
-        if "frocio" in text:
-            reply.append("Come combatto un frocio?\nScopandolo io prima che lui scopi me.\nSe io non scopo lui, infatti, lui scoperà me.")
-
-        if len(reply) == 1:
-            await update.message.reply_text(reply[0])
-        elif len(reply) > 1:
-            await update.message.reply_text(f'Ho {len(reply)} osservazioni da fare:\n' + '\n'.join(f'{i}. {txt.replace('\n', ' ')}' for i, txt in enumerate(reply, start=1)))
+        words = triggers['trigger'].tolist()
+        triggereds = re.findall('|'.join(words), text)
+        if triggereds:
+            reply = triggers.set_index('trigger').loc[triggereds]['risposta'].values
+            if len(reply) == 1:
+                msg = reply[0]
+            else:
+                msg = f'Ho {len(reply)} osservazioni da fare:\n' + '\n'.join(f'{i}. {txt.replace("\n", " ")}' for i, txt in enumerate(reply, start=1))
+            await update.message.reply_text(msg)
 
 async def error_handler(update, context):
     if context.error:
@@ -192,7 +188,7 @@ def main():
     app.add_handler(CommandHandler("venerdi", slash_venerdi))
 
     # Trigger
-    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, trigger_reply))
+    app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reply_trigger))
 
     # Error Handling
     app.add_error_handler(error_handler)
