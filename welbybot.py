@@ -63,7 +63,7 @@ async def send_shutdown_message(bot: Bot):
 async def slash_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         text = help(Path(__file__), context.args)
-        await update.message.reply_text(text=text)#, parse_mode=ParseMode.MARKDOWN_V2) # type: ignore
+        await update.message.reply_text(text=text) # type: ignore
     except (KeyError, FileNotFoundError) as e:
         await update.message.reply_text( # type: ignore
             f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
@@ -159,10 +159,8 @@ async def slash_venerdi(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def slash_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         keyword = " ".join(getattr(context, 'args', []))
-        if not keyword:
-            raise KeyError
         msg: list[str] = query(history_df, keyword)
-        await update.message.reply_text("".join(msg), parse_mode=ParseMode.MARKDOWN_V2)  # type: ignore
+        await update.message.reply_text("".join(msg))  # type: ignore
     except KeyError as e:
         await update.message.reply_text( # type: ignore
             f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
@@ -182,6 +180,7 @@ async def reply_trigger(update: Update, context: ContextTypes.DEFAULT_TYPE) -> s
             else:
                 msg = f'Ho {len(reply)} osservazioni da fare:\n' + '\n'.join(f'{i}. {txt.replace("\n", " ")}' for i, txt in enumerate(reply, start=1))
             await update.message.reply_text(msg)
+    return None
 
 async def error_handler(update, context):
     if context.error:
