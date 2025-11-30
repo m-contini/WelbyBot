@@ -179,6 +179,6 @@ def query(dataframe: pd.DataFrame, keyword: str) -> list[str]:
                 continue
             date = row['date'].strftime("%d/%m/%y %H:%M")
             sender = row['from']
-            msg.append(f"[{date}] {sender}: {text}\n")
+            msg.append(escape_markdown_v2(f"[{date}] {sender}: {text}\n"))
 
         return msg
