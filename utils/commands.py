@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import re
 from random import randint
+
+import pandas as pd
 from .funcs import ita_dtime, escape_markdown_v2,escape_md2 # type: ignore
 
 # /help
@@ -159,3 +161,24 @@ def venerdi(args) -> str:
         msg += f"\n\n_{extra}_"
 
     return msg
+
+def query(dataframe: pd.DataFrame, keyword: str) -> list[str]:
+        results = dataframe.loc[
+            dataframe['text'].str.contains(keyword, case=False, na=False, regex=True)
+        ].copy()
+        if results.empty:
+            return ["Nessun risultato trovato."]
+        results['date'] = pd.to_datetime(results['date'])
+        dataframe['date'] = pd.to_datetime(dataframe['date'])
+
+        msg = []
+        stone = results.sample(1).index[0]
+        for _, row in dataframe.loc[stone-3:stone+4].iterrows():
+            text = row['text']
+            if not text:
+                continue
+            date = row['date'].strftime("%d/%m/%y %H:%M")
+            sender = row['from']
+            msg.append(f"[{date}] {sender}: {text}\n")
+
+        return msg

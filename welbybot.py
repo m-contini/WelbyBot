@@ -11,6 +11,7 @@ if len(sys.argv) > 2 or (len(sys.argv) == 2 and sys.argv[1] != 'silent'):
 
 import asyncio
 import re
+import json
 import pandas as pd
 from telegram import Update, Bot
 from telegram.constants import ParseMode
@@ -24,8 +25,8 @@ from os import chdir, getenv
 from pathlib import Path
 import sys
 
-from utils.commands import help, gabbia, bossetti, schedule, todo, venerdi
-from utils.const import TRIGGERS,DEMONIMI
+from utils.commands import help, gabbia, bossetti, schedule, todo, venerdi, query
+from utils.const import TRIGGERS,DEMONIMI, HISTORY
 
 #: Messaggio manuale da shell Bash
 #: curl -X POST "https://api.telegram.org/bot<TOKEN>/sendMessage" -d "chat_id=<GROUP_ID>&text=CIMMIA 🦧"
@@ -42,7 +43,9 @@ GROUP_ID = int(getenv('GROUP_ID', ''))
 BOSSETTI = getenv('BOSSETTI', '')
 TO_DO    = getenv('TO_DO', '')
 
-triggers: pd.DataFrame = pd.concat([pd.read_csv(TRIGGERS), pd.read_csv(DEMONIMI)], axis=0, ignore_index=True)
+triggers = pd.concat([pd.read_csv(TRIGGERS), pd.read_csv(DEMONIMI)], axis=0, ignore_index=True)
+messages = json.load(HISTORY.open('r', encoding='utf-8'))['messages']
+history_df = pd.DataFrame(messages)[['from', 'date', 'text']]
 
 scheduler = BackgroundScheduler()
 
@@ -141,6 +144,7 @@ async def slash_todo(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "/todo add testo: Aggiunge testo alla To-Do list."
         )
 
+# /venerdi
 async def slash_venerdi(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         msg = venerdi(context.args)
@@ -149,6 +153,20 @@ async def slash_venerdi(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text( # type: ignore
             f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
             "/venerdi: Seleziona un pub casuale in cui andare."
+        )
+
+# /query <testo o parola chiave>
+async def slash_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        keyword = " ".join(getattr(context, 'args', []))
+        if not keyword:
+            raise KeyError
+        msg: list[str] = query(history_df, keyword)
+        await update.message.reply_text("".join(msg), parse_mode=ParseMode.MARKDOWN_V2)  # type: ignore
+    except KeyError as e:
+        await update.message.reply_text( # type: ignore
+            f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
+            "/query <parola_chiave>: Cerca nei messaggi storici."
         )
 
 # Trigger
@@ -192,6 +210,7 @@ def main():
     app.add_handler(CommandHandler("gabbia", slash_gabbia))
     app.add_handler(CommandHandler("bossetti", slash_bossetti))
     app.add_handler(CommandHandler("venerdi", slash_venerdi))
+    app.add_handler(CommandHandler("query", slash_query))
 
     # Trigger
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, reply_trigger))

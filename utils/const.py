@@ -34,3 +34,4 @@ def shutdown_msg() -> str:
 
 DEMONIMI = PARENT / 'private' / 'demonyms.csv'
 TRIGGERS = PARENT / 'private' / 'triggers.csv'
+HISTORY = PARENT / 'private' / 'history' / 'result.json'

@@ -13,6 +13,7 @@
       - [Incrementare](#incrementare)
       - [Ultimo valore](#ultimo-valore)
     - [`/venerdi`](#venerdi)
+    - [`/query`](#query)
   - [2. Trigger](#2-trigger)
   - [3. Messaggi automatici](#3-messaggi-automatici)
   - [4. Errori o Richieste](#4-errori-o-richieste)
@@ -190,6 +191,31 @@ Istruisce su dove si debba andare di venerdì sera in caso di indecisione
 
 ---
 
+### `/query`
+
+Stampa un messaggio casuale fra i risultati di ricerca per parola chiave o testo, e vi appende anche i precedenti e successivi 3 per dare contesto.
+
+**Sintassi:**
+
+```plain
+/query <testo o parola chiave>
+```
+
+**Esempi:**
+
+```plain
+/query mangiami
+```
+
+> 10/11/2023 22:21 tizioA: Stai per  
+> 10/11/2023 22:25 tizioB: scrivere  
+> 10/11/2023 22:30 tizioC: mangiami  
+> 10/11/2023 22:35 tizioB: tutto  
+> 10/11/2023 22:40 tizioA: quello  
+> 10/11/2023 22:45 tizioC: basta  
+
+---
+
 ## 2. Trigger
 
 *ANoDoRea* risponde automaticamente a determinati termini presenti nei messaggi.  
@@ -262,7 +288,7 @@ Contattare il Potere dell'Autismo Centrale.
 
 ## 7. Versione
 
-**Versione:** 1.8  
+**Versione:** 2.0  
 **Data rilascio:** 2025-10-05
 
 ---
