@@ -162,7 +162,7 @@ async def slash_query(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not keyword:
             raise KeyError
         msg: list[str] = query(history_df, keyword)
-        await update.message.reply_text("".join(msg), parse_mode=ParseMode.MARKDOWN_V2)  # type: ignore
+        await update.message.reply_text("".join(msg))  # type: ignore
     except KeyError as e:
         await update.message.reply_text( # type: ignore
             f"CRY! - {type(e).__name__}: {e}\nUso corretto:\n"
