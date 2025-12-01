@@ -163,11 +163,13 @@ def venerdi(args) -> str:
     return msg
 
 def query(dataframe: pd.DataFrame, keyword: str) -> list[str]:
+        if not keyword:
+            raise KeyError("Parola chiave mancante.")
         results = dataframe.loc[
             dataframe['text'].str.contains(keyword, case=False, na=False, regex=True)
         ].copy()
         if results.empty:
-            return ["Nessun risultato trovato."]
+            return ["Nessun risultato trovato"]
         results['date'] = pd.to_datetime(results['date'])
         dataframe['date'] = pd.to_datetime(dataframe['date'])
 
